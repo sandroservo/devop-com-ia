@@ -135,7 +135,7 @@ rsync -avz --delete \
   --exclude 'node_modules' \
   --exclude '.next' \
   --exclude '.git' \
-  --exclude 'data' \
+  --exclude 'data/students.json' \
   --exclude '.env.local' \
   -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" \
   ./ "$SERVER_USER@$SERVER_IP:$APP_DIR/"
