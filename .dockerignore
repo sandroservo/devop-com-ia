@@ -1,0 +1,48 @@
+# Dependências
+node_modules
+npm-debug.log
+
+# Next.js
+.next
+out
+dist
+
+# Ambiente
+.env
+.env.local
+.env*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# Testing
+coverage
+.nyc_output
+
+# Logs
+*.log
+logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentação (já foi consolidada)
+*.md
+!README.md
+
+# Data (será criado no container)
+data/students.json
+
+# Deploy
+deploy.sh
+docker-compose.yml
+
+# Misc
+.editorconfig
+.prettierrc
