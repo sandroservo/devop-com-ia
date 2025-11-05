@@ -44,3 +44,5 @@ next-env.d.ts
 
 # temp certificates
 /public/temp-certificates
+#ssh
+/ssh
