@@ -30,6 +30,59 @@ export default function CertificateModule({ presentationTitle, instructorName }:
   const [sendStatus, setSendStatus] = useState('');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [sendingStudentId, setSendingStudentId] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState('');
+
+  // Função para formatar telefone brasileiro
+  const formatPhoneNumber = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Limita a 11 dígitos (DDD + número)
+    const limited = numbers.slice(0, 11);
+    
+    // Aplica a máscara
+    if (limited.length <= 2) {
+      return limited;
+    } else if (limited.length <= 7) {
+      return `(${limited.slice(0, 2)}) ${limited.slice(2)}`;
+    } else if (limited.length <= 11) {
+      return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7)}`;
+    }
+    
+    return limited;
+  };
+
+  // Validar telefone brasileiro
+  const validatePhone = (phone: string): boolean => {
+    const numbers = phone.replace(/\D/g, '');
+    // Deve ter 10 ou 11 dígitos (DDD + 8 ou 9 dígitos)
+    return numbers.length === 10 || numbers.length === 11;
+  };
+
+  // Handler para mudança no telefone
+  const handlePhoneChange = (value: string, isEdit = false) => {
+    const formatted = formatPhoneNumber(value);
+    const numbers = formatted.replace(/\D/g, '');
+    
+    if (isEdit && editingStudent) {
+      setEditingStudent({ ...editingStudent, phone: formatted });
+    } else {
+      setFormData({ ...formData, phone: formatted });
+    }
+    
+    // Validar quando completar
+    if (numbers.length === 10 || numbers.length === 11) {
+      if (validatePhone(formatted)) {
+        setPhoneError('');
+      } else {
+        setPhoneError('Número inválido');
+      }
+    } else if (numbers.length > 0) {
+      setPhoneError('Digite o DDD e o número completo');
+    } else {
+      setPhoneError('');
+    }
+  };
 
   // Carregar alunos do arquivo JSON ao montar
   useEffect(() => {
@@ -52,6 +105,14 @@ export default function CertificateModule({ presentationTitle, instructorName }:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar telefone antes de enviar
+    if (!validatePhone(formData.phone)) {
+      setPhoneError('Número de telefone inválido. Use (99) 99999-9999');
+      setSendStatus('❌ Corrija o número de telefone antes de cadastrar');
+      setTimeout(() => setSendStatus(''), 3000);
+      return;
+    }
     
     const newStudent: Student = {
       id: Date.now().toString(),
@@ -92,6 +153,14 @@ export default function CertificateModule({ presentationTitle, instructorName }:
   // Salvar edição
   const handleSaveEdit = async () => {
     if (!editingStudent) return;
+
+    // Validar telefone antes de salvar
+    if (!validatePhone(editingStudent.phone)) {
+      setPhoneError('Número de telefone inválido. Use (99) 99999-9999');
+      setSendStatus('❌ Corrija o número de telefone antes de salvar');
+      setTimeout(() => setSendStatus(''), 3000);
+      return;
+    }
 
     try {
       // Atualizar no servidor
@@ -321,11 +390,19 @@ export default function CertificateModule({ presentationTitle, instructorName }:
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-gray-800 text-white text-sm sm:text-base rounded-lg px-3 py-2 sm:px-4 sm:py-3 border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      placeholder="11999999999"
+                      onChange={(e) => handlePhoneChange(e.target.value, false)}
+                      className={`w-full bg-gray-800 text-white text-sm sm:text-base rounded-lg px-3 py-2 sm:px-4 sm:py-3 border ${
+                        phoneError ? 'border-red-500' : 'border-gray-600'
+                      } focus:border-purple-500 focus:outline-none`}
+                      placeholder="(99) 99999-9999"
                       required
                     />
+                    {phoneError && (
+                      <p className="text-red-400 text-xs mt-1">✗ {phoneError}</p>
+                    )}
+                    {formData.phone && !phoneError && validatePhone(formData.phone) && (
+                      <p className="text-green-400 text-xs mt-1">✓ Número válido</p>
+                    )}
                   </div>
 
                   <button
@@ -377,9 +454,18 @@ export default function CertificateModule({ presentationTitle, instructorName }:
                     <input
                       type="tel"
                       value={editingStudent.phone}
-                      onChange={(e) => setEditingStudent({ ...editingStudent, phone: e.target.value })}
-                      className="w-full bg-gray-800 text-white rounded-lg px-4 py-3 border border-gray-600 focus:border-blue-500 focus:outline-none"
+                      onChange={(e) => handlePhoneChange(e.target.value, true)}
+                      className={`w-full bg-gray-800 text-white rounded-lg px-4 py-3 border ${
+                        phoneError ? 'border-red-500' : 'border-gray-600'
+                      } focus:border-blue-500 focus:outline-none`}
+                      placeholder="(99) 99999-9999"
                     />
+                    {phoneError && (
+                      <p className="text-red-400 text-xs mt-1">✗ {phoneError}</p>
+                    )}
+                    {editingStudent.phone && !phoneError && validatePhone(editingStudent.phone) && (
+                      <p className="text-green-400 text-xs mt-1">✓ Número válido</p>
+                    )}
                   </div>
 
                   <div className="flex gap-2">
