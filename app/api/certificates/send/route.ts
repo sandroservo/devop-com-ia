@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
 
     // Formatar número de telefone (remover caracteres especiais)
     const phoneNumber = student.phone.replace(/\D/g, '');
+    
+    // Validar número de telefone brasileiro
+    if (phoneNumber.length < 10 || phoneNumber.length > 13) {
+      throw new Error(`Número de telefone inválido: ${student.phone}. Use o formato (99) 99999-9999`);
+    }
+    
     const formattedPhone = phoneNumber.startsWith('55') 
       ? phoneNumber 
       : `55${phoneNumber}`;
@@ -99,7 +105,21 @@ _Obrigado pela participação!_`;
           media: payload.media.substring(0, 100) + '...' // Truncar base64 no log
         }
       });
-      throw new Error(`Erro ao enviar mensagem: ${response.status} - ${errorText}`);
+      
+      // Tentar parsear o erro para mensagem amigável
+      let errorMessage = `Erro ao enviar mensagem: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        if (errorJson.response?.message?.[0]?.exists === false) {
+          errorMessage = `Número de WhatsApp inválido ou não existe: ${student.phone}. Verifique se o número está correto e tem WhatsApp ativo.`;
+        } else if (errorJson.error) {
+          errorMessage = `Erro da Evolution API: ${errorJson.error}`;
+        }
+      } catch (e) {
+        errorMessage = `Erro ao enviar: ${errorText}`;
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
@@ -113,8 +133,9 @@ _Obrigado pela participação!_`;
 
   } catch (error) {
     console.error('Erro ao processar envio:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao enviar certificado';
     return NextResponse.json(
-      { success: false, error: 'Erro ao enviar certificado' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
